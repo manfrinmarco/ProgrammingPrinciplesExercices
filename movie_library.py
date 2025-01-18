@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 
 
 class MovieLibrary:
@@ -65,7 +66,7 @@ class MovieLibrary:
         :return: Removed movie if successful.
         """
         for movie in self.movies:
-            if movie['title'].lower() == title.lower():
+            if movie['title'].casefold() == title.casefold():
                 self.movies.remove(movie)
                 self._save_to_file()
                 print(f"Movie '{title}' removed successfully.")
@@ -82,7 +83,7 @@ class MovieLibrary:
         :return: Updated movie dictionary.
         """
         for movie in self.movies:
-            if movie['title'].lower() == title.lower():
+            if movie['title'].casefold() == title.casefold():
                 if director:
                     movie['director'] = director
                 if year:
@@ -115,7 +116,7 @@ class MovieLibrary:
         :return: Movie dictionary if found.
         """
         for movie in self.movies:
-            if movie['title'].lower() == title.lower():
+            if movie['title'].casefold() == title.casefold():
                 return movie
         raise self.MovieNotFoundError()
 
@@ -151,7 +152,7 @@ class MovieLibrary:
         """
         total = sum(
             1 for movie in self.movies
-            if movie['director'].lower() == director.lower()
+            if movie['director'].casefold() == director.casefold()
         )
         return total
 
@@ -163,7 +164,7 @@ class MovieLibrary:
         """
         result = [
             movie for movie in self.movies
-            if genre.lower() in [g.lower() for g in movie['genres']]
+            if genre.casefold() in [g.casefold() for g in movie['genres']]
         ]
         return result
 
@@ -184,15 +185,11 @@ class MovieLibrary:
         return total / len(self.movies)
 
     def get_longest_title(self):
-        """
-        Retrieve the title with the longest length.
-        :return: Longest title.
-        """
-        longest = None
+        longest = {'title': ''}
         for movie in self.movies:
-            if not longest or len(movie['title']) > len(longest['title']):
+            if len(movie['title']) > len(longest['title']):
                 longest = movie
-        return longest['title']
+        return longest['title'] if self.movies else None
 
     def get_titles_between_years(self, start_year, end_year):
         """
@@ -201,19 +198,20 @@ class MovieLibrary:
         :param end_year: End of the range.
         :return: List of titles in the range.
         """
-        result = []
-        for movie in self.movies:
-            if start_year <= movie['year'] <= end_year:
-                result.append(movie['title'])
-        return result
+        return [
+            movie['title'] for movie in self.movies
+            if start_year <= movie['year'] <= end_year
+        ]
 
     def get_most_common_year(self):
         """
         Retrieve the most common release year among movies.
+        Find most common: The most_common(1) method returns a list with the
+        single most common element,
+        in the form of a tuple (year, frequency).
+        The index [0][0] retrieves the year.
         :return: Year that occurs most often.
         """
-        years = {}
-        for movie in self.movies:
-            years[movie['year']] = years.get(movie['year'], 0) + 1
-        most_common_year = max(years, key=years.get)
+        years = [movie['year'] for movie in self.movies]
+        most_common_year = Counter(years).most_common(1)[0][0]
         return most_common_year
